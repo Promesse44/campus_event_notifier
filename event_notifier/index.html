@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Discover and keep track of events happening on campus.">
+    <title>Campus Event Notifier</title>
+    <style>
+      :root { color-scheme: light; font-family: system-ui, sans-serif; color: #172554; }
+      body { margin: 0; background: #f1f5f9; }
+      main { width: min(760px, calc(100% - 2rem)); margin: 2rem auto; }
+      header, section { padding: 1.5rem; border-radius: 12px; background: white; }
+      header { margin-bottom: 1rem; background: #1d4ed8; color: white; }
+      h1, h2, p { margin-top: 0; }
+      form { display: grid; gap: .8rem; }
+      label { display: grid; gap: .3rem; font-weight: 600; }
+      input, textarea, button { box-sizing: border-box; padding: .7rem; font: inherit; }
+      input, textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; }
+      button { border: 0; border-radius: 6px; background: #1d4ed8; color: white; cursor: pointer; }
+      button:hover { background: #1e40af; }
+      #events { display: grid; gap: .75rem; }
+      .event { padding: 1rem; border: 1px solid #cbd5e1; border-radius: 8px; }
+      .event h3 { margin: 0 0 .4rem; }
+      .event p { margin: .25rem 0; }
+      #status { min-height: 1.5rem; }
+      @media (min-width: 600px) {
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Campus Event Notifier</h1>
+        <p>Find out what's happening on your campus and share an event with your community.</p>
+      </header>
+      <section aria-labelledby="create-heading">
+        <h2 id="create-heading">Add an event</h2>
+        <form id="event-form">
+          <label>Event name
+            <input name="title" maxlength="120" required>
+          </label>
+          <div class="form-row">
+            <label>Location
+              <input name="location" maxlength="200" required>
+            </label>
+            <label>Date and time
+              <input name="starts_at" type="datetime-local" required>
+            </label>
+          </div>
+          <label>Description
+            <textarea name="description" maxlength="2000" rows="3"></textarea>
+          </label>
+          <button type="submit">Add event</button>
+        </form>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+      <section aria-labelledby="upcoming-heading">
+        <h2 id="upcoming-heading">Upcoming events</h2>
+        <div id="events"></div>
+      </section>
+    </main>
+    <script>
+      const eventList = document.querySelector("#events");
+      const status = document.querySelector("#status");
+      const form = document.querySelector("#event-form");
+
+      function addText(parent, tag, text) {
+        const element = document.createElement(tag);
+        element.textContent = text;
+        parent.append(element);
+      }
+
+      async function loadEvents() {
+        const response = await fetch("/api/events");
+        if (!response.ok) throw new Error("Could not load upcoming events.");
+        const events = await response.json();
+        eventList.replaceChildren();
+        if (events.length === 0) {
+          addText(eventList, "p", "No upcoming events yet. Add the first one!");
+          return;
+        }
+        for (const event of events) {
+          const card = document.createElement("article");
+          card.className = "event";
+          addText(card, "h3", event.title);
+          addText(card, "p", new Date(event.starts_at).toLocaleString());
+          addText(card, "p", event.location);
+          if (event.description) addText(card, "p", event.description);
+          eventList.append(card);
+        }
+      }
+
+      form.addEventListener("submit", async (submitEvent) => {
+        submitEvent.preventDefault();
+        status.textContent = "";
+        const values = Object.fromEntries(new FormData(form));
+        values.starts_at = new Date(values.starts_at).toISOString();
+        try {
+          const response = await fetch("/api/events", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(values),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Could not save event.");
+          form.reset();
+          status.textContent = "Event added.";
+          await loadEvents();
+        } catch (error) {
+          status.textContent = error.message;
+        }
+      });
+
+      loadEvents().catch((error) => { status.textContent = error.message; });
+    </script>
+  </body>
+</html>
