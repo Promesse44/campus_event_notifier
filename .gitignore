@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+ENV/
+
+# JavaScript tooling (reserved for future UI/build tooling)
+node_modules/
+npm-debug.log*
+
+# Environment variables and credentials
+.env
+.env.*
+!.env.example
+config.local.yml
+config.local.yaml
+*.pem
+*.key
+
+# Test, lint, and coverage output
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Build and package output
+build/
+dist/
+site/
+*.egg-info/
+
+# Runtime data and logs
+/data/
+*.log
+*.tmp
+
+# IDE and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
